@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../providers/discount_provider.dart';
 
 class ScreenOne extends StatefulWidget {
   const ScreenOne({super.key});
@@ -12,18 +14,13 @@ class _ScreenOneState extends State<ScreenOne> {
   final _formKey = GlobalKey<FormState>();
   final _originalPriceController = TextEditingController();
   final _discountController = TextEditingController();
-  double? _finalPrice;
-  double? _savedAmount;
 
   void _calculateDiscount() {
     if (_formKey.currentState!.validate()) {
-      final originalPrice = double.parse(_originalPriceController.text);
-      final discount = double.parse(_discountController.text);
-      
-      setState(() {
-        _savedAmount = (originalPrice * discount) / 100;
-        _finalPrice = originalPrice - _savedAmount!;
-      });
+      context.read<DiscountCalculatorProvider>().calculateDiscount(
+        _originalPriceController.text,
+        _discountController.text,
+      );
     }
   }
 
@@ -119,28 +116,47 @@ class _ScreenOneState extends State<ScreenOne> {
                 ),
               ),
               const SizedBox(height: 24),
-              if (_finalPrice != null) ...[
-                Card(
-                  elevation: 4,
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Precio Final: ${_formatCurrency(_finalPrice!)}',
-                          style: Theme.of(context).textTheme.titleLarge,
+              Consumer<DiscountCalculatorProvider>(
+                builder: (context, provider, child) {
+                  if (provider.errorMessage != null) {
+                    return Card(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          provider.errorMessage!,
+                          style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Ahorro: ${_formatCurrency(_savedAmount!)}',
-                          style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    );
+                  }
+                  
+                  if (provider.finalPrice != null && provider.savedAmount != null) {
+                    return Card(
+                      elevation: 4,
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            Text(
+                              'Precio Final: ${_formatCurrency(provider.finalPrice!)}',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Ahorro: ${_formatCurrency(provider.savedAmount!)}',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             ],
           ),
         ),
