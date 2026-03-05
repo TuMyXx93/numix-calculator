@@ -13,13 +13,17 @@ class ScreenOne extends StatefulWidget {
 class _ScreenOneState extends State<ScreenOne> {
   final _formKey = GlobalKey<FormState>();
   final _originalPriceController = TextEditingController();
-  final _discountController = TextEditingController();
+  final _primaryDiscountController = TextEditingController();
+  final _additionalDiscountController = TextEditingController();
+  final _taxController = TextEditingController();
 
   void _calculateDiscount() {
     if (_formKey.currentState!.validate()) {
       context.read<DiscountCalculatorProvider>().calculateDiscount(
-        _originalPriceController.text,
-        _discountController.text,
+        originalPriceStr: _originalPriceController.text,
+        primaryDiscountStr: _primaryDiscountController.text,
+        additionalDiscountStr: _additionalDiscountController.text,
+        taxStr: _taxController.text,
       );
     }
   }
@@ -31,7 +35,9 @@ class _ScreenOneState extends State<ScreenOne> {
   @override
   void dispose() {
     _originalPriceController.dispose();
-    _discountController.dispose();
+    _primaryDiscountController.dispose();
+    _additionalDiscountController.dispose();
+    _taxController.dispose();
     super.dispose();
   }
 
@@ -39,8 +45,20 @@ class _ScreenOneState extends State<ScreenOne> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calcular Descuentos'),
+        title: const Text('Calculadora de Descuentos'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              _originalPriceController.clear();
+              _primaryDiscountController.clear();
+              _additionalDiscountController.clear();
+              _taxController.clear();
+              context.read<DiscountCalculatorProvider>().clear();
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -49,6 +67,36 @@ class _ScreenOneState extends State<ScreenOne> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Tipo de Descuento Toggle
+              Consumer<DiscountCalculatorProvider>(
+                builder: (context, provider, child) {
+                  return Card(
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('Porcentaje (%)'),
+                          Switch(
+                            value: provider.discountType == DiscountType.fixedAmount,
+                            onChanged: (value) {
+                              provider.setDiscountType(
+                                value ? DiscountType.fixedAmount : DiscountType.percentage,
+                              );
+                              if (_originalPriceController.text.isNotEmpty && _primaryDiscountController.text.isNotEmpty) {
+                                _calculateDiscount();
+                              }
+                            },
+                          ),
+                          const Text('Monto Fijo (\$)'),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              ),
+              const SizedBox(height: 16),
               Card(
                 elevation: 4,
                 child: Padding(
@@ -77,30 +125,67 @@ class _ScreenOneState extends State<ScreenOne> {
                         },
                       ),
                       const SizedBox(height: 16),
+                      Consumer<DiscountCalculatorProvider>(
+                        builder: (context, provider, child) {
+                          bool isPercentage = provider.discountType == DiscountType.percentage;
+                          return TextFormField(
+                            controller: _primaryDiscountController,
+                            decoration: InputDecoration(
+                              labelText: isPercentage ? 'Descuento Principal (%)' : 'Descuento Principal (\$)',
+                              prefixIcon: Icon(isPercentage ? Icons.percent : Icons.money_off),
+                              border: const OutlineInputBorder(),
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                            ],
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingrese el descuento';
+                              }
+                              final discount = double.tryParse(value);
+                              if (discount == null) {
+                                return 'Por favor ingrese un número válido';
+                              }
+                              if (isPercentage && (discount < 0 || discount > 100)) {
+                                return 'El porcentaje debe estar entre 0 y 100';
+                              }
+                              return null;
+                            },
+                          );
+                        }
+                      ),
+                      const SizedBox(height: 16),
+                      Consumer<DiscountCalculatorProvider>(
+                        builder: (context, provider, child) {
+                          bool isPercentage = provider.discountType == DiscountType.percentage;
+                          return TextFormField(
+                            controller: _additionalDiscountController,
+                            decoration: InputDecoration(
+                              labelText: isPercentage ? 'Descuento Adicional Sucesivo (%)' : 'Descuento Adicional (\$)',
+                              prefixIcon: Icon(isPercentage ? Icons.percent : Icons.money_off),
+                              border: const OutlineInputBorder(),
+                              hintText: 'Opcional',
+                            ),
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                            ],
+                          );
+                        }
+                      ),
+                      const SizedBox(height: 16),
                       TextFormField(
-                        controller: _discountController,
+                        controller: _taxController,
                         decoration: const InputDecoration(
-                          labelText: 'Porcentaje de Descuento',
-                          prefixIcon: Icon(Icons.percent),
+                          labelText: 'Impuestos / IVA (%) (Opcional)',
+                          prefixIcon: Icon(Icons.account_balance),
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
                         ],
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Por favor ingrese el descuento';
-                          }
-                          final discount = double.tryParse(value);
-                          if (discount == null) {
-                            return 'Por favor ingrese un número válido';
-                          }
-                          if (discount < 0 || discount > 100) {
-                            return 'El descuento debe estar entre 0 y 100';
-                          }
-                          return null;
-                        },
                       ),
                     ],
                   ),
@@ -139,15 +224,30 @@ class _ScreenOneState extends State<ScreenOne> {
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             Text(
-                              'Precio Final: ${_formatCurrency(provider.finalPrice!)}',
-                              style: Theme.of(context).textTheme.titleLarge,
+                              'Resumen del Descuento',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            const SizedBox(height: 8),
+                            const Divider(),
+                            _buildResultRow('Precio Original:', double.parse(_originalPriceController.text)),
+                            _buildResultRow('Total Ahorrado:', provider.savedAmount!, color: Colors.green),
+                            if (provider.taxAmount! > 0) ...[
+                              _buildResultRow('Subtotal:', provider.subtotal!),
+                              _buildResultRow('Impuestos:', provider.taxAmount!, color: Colors.redAccent),
+                            ],
+                            const Divider(),
                             Text(
-                              'Ahorro: ${_formatCurrency(provider.savedAmount!)}',
-                              style: Theme.of(context).textTheme.titleMedium,
+                              'Precio Final a Pagar: ${_formatCurrency(provider.finalPrice!)}',
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ],
                         ),
@@ -160,6 +260,22 @@ class _ScreenOneState extends State<ScreenOne> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildResultRow(String label, double value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 16)),
+          Text(
+            (color == Colors.green ? '-' : '') + _formatCurrency(value),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: color),
+          ),
+        ],
       ),
     );
   }

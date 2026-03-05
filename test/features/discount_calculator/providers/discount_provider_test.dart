@@ -12,67 +12,101 @@ void main() {
     test('Initial values are null', () {
       expect(provider.finalPrice, isNull);
       expect(provider.savedAmount, isNull);
+      expect(provider.subtotal, isNull);
+      expect(provider.taxAmount, isNull);
       expect(provider.errorMessage, isNull);
+      expect(provider.discountType, DiscountType.percentage);
     });
 
-    test('Calculates discount correctly', () {
-      provider.calculateDiscount('100', '20');
+    test('Calculates simple percentage discount correctly', () {
+      provider.calculateDiscount(
+        originalPriceStr: '100', 
+        primaryDiscountStr: '20'
+      );
 
       expect(provider.errorMessage, isNull);
       expect(provider.savedAmount, 20.0);
+      expect(provider.subtotal, 80.0);
+      expect(provider.taxAmount, 0.0);
       expect(provider.finalPrice, 80.0);
     });
 
-    test('Calculates discount correctly with decimals', () {
-      provider.calculateDiscount('150.50', '15.5');
+    test('Calculates sequential percentage discount correctly', () {
+      // 100 - 20% = 80. Then 80 - 10% = 72. Total saved = 28.
+      provider.calculateDiscount(
+        originalPriceStr: '100', 
+        primaryDiscountStr: '20',
+        additionalDiscountStr: '10',
+      );
 
       expect(provider.errorMessage, isNull);
-      expect(provider.savedAmount, closeTo(23.3275, 0.001));
-      expect(provider.finalPrice, closeTo(127.1725, 0.001));
+      expect(provider.savedAmount, 28.0);
+      expect(provider.subtotal, 72.0);
+      expect(provider.finalPrice, 72.0);
     });
 
-    test('Sets error message for invalid number format', () {
-      provider.calculateDiscount('abc', '20');
+    test('Calculates fixed amount discount correctly', () {
+      provider.setDiscountType(DiscountType.fixedAmount);
+      provider.calculateDiscount(
+        originalPriceStr: '150', 
+        primaryDiscountStr: '30',
+        additionalDiscountStr: '15',
+      );
 
-      expect(provider.errorMessage, 'Valores inválidos');
-      expect(provider.savedAmount, isNull);
+      expect(provider.errorMessage, isNull);
+      expect(provider.savedAmount, 45.0);
+      expect(provider.subtotal, 105.0);
+      expect(provider.finalPrice, 105.0);
+    });
+
+    test('Calculates correctly with tax', () {
+      provider.calculateDiscount(
+        originalPriceStr: '100', 
+        primaryDiscountStr: '20',
+        taxStr: '15',
+      );
+
+      // Price = 100, -20% = 80. Tax = 15% of 80 = 12. Final = 92.
+      expect(provider.errorMessage, isNull);
+      expect(provider.savedAmount, 20.0);
+      expect(provider.subtotal, 80.0);
+      expect(provider.taxAmount, 12.0);
+      expect(provider.finalPrice, 92.0);
+    });
+
+    test('Fixed discount exceeds original price shows error', () {
+      provider.setDiscountType(DiscountType.fixedAmount);
+      provider.calculateDiscount(
+        originalPriceStr: '100', 
+        primaryDiscountStr: '120'
+      );
+
+      expect(provider.errorMessage, 'El descuento no puede ser mayor al precio original');
       expect(provider.finalPrice, isNull);
     });
 
-    test('Sets error message for empty strings', () {
-      provider.calculateDiscount('', '');
+    test('Percentage > 100 shows error', () {
+      provider.calculateDiscount(
+        originalPriceStr: '100', 
+        primaryDiscountStr: '110'
+      );
 
-      expect(provider.errorMessage, 'Valores inválidos');
-      expect(provider.savedAmount, isNull);
+      expect(provider.errorMessage, 'Los porcentajes de descuento no pueden exceder 100%');
       expect(provider.finalPrice, isNull);
     });
 
-    test('Sets error message for negative original price', () {
-      provider.calculateDiscount('-100', '20');
+    test('Negative values show error', () {
+      provider.calculateDiscount(
+        originalPriceStr: '-100', 
+        primaryDiscountStr: '20'
+      );
 
-      expect(provider.errorMessage, 'El descuento debe estar entre 0 y 100, y el precio debe ser positivo');
-      expect(provider.savedAmount, isNull);
-      expect(provider.finalPrice, isNull);
-    });
-
-    test('Sets error message for discount greater than 100', () {
-      provider.calculateDiscount('100', '110');
-
-      expect(provider.errorMessage, 'El descuento debe estar entre 0 y 100, y el precio debe ser positivo');
-      expect(provider.savedAmount, isNull);
-      expect(provider.finalPrice, isNull);
-    });
-
-    test('Sets error message for negative discount', () {
-      provider.calculateDiscount('100', '-10');
-
-      expect(provider.errorMessage, 'El descuento debe estar entre 0 y 100, y el precio debe ser positivo');
-      expect(provider.savedAmount, isNull);
+      expect(provider.errorMessage, 'Los valores no pueden ser negativos');
       expect(provider.finalPrice, isNull);
     });
 
     test('Clears values correctly', () {
-      provider.calculateDiscount('100', '20');
+      provider.calculateDiscount(originalPriceStr: '100', primaryDiscountStr: '20');
       provider.clear();
 
       expect(provider.finalPrice, isNull);
