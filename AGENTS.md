@@ -1,68 +1,39 @@
-# Agent AI Instructions & Ecosystem (AGENTS.md) - Numix
+# Numix AI Ecosystem & Instructions
 
-Welcome! You are an AI agent operating in the `numix` Flutter repository. This is a **living document**. As the project evolves, you and your subagents are expected to update this file with new architectural decisions, learned patterns, and new skills.
+Welcome! You are an AI agent operating in the `numix` Flutter repository. 
 
-## 1. AI Ecosystem & Architecture
-Our AI-driven development environment consists of the following structure:
-- **Main Agent (You)**: Acts as the orchestrator, planner, and primary executor. Always plan before acting.
-- **Subagents**: 
-  - `explore`: For deep codebase searches.
-  - `devops-agent`: Specialized in native compilation issues (Gradle, Kotlin, AGP).
-  - `dart-analyzer-agent`: Fixes dependency resolution (`pub get`) and static typing errors autonomously.
-  - `ui-ux-agent`: Specialist in Flutter widget tree optimization, Material Design 3, animations, and accessible, modern UIs.
-  - `qa-integration-agent`: Specialist in E2E testing and Widget Tests to ensure robust user flows.
-  - `tech-writer-agent`: Specialist in keeping README.md, code comments, and project documentation up to date with architectural changes.
-- **Skills**: Load specific domain skills via the `skill` tool when available:
-  - `git-ops-skill`: Enforces Conventional Commits (feat, fix, refactor, chore) and atomic commits after each logical phase.
-  - `kotlin-compatibility-skill`: Resolves Kotlin/Gradle version mismatches.
-  - `log-filter-skill`: Filters OEM noise from Flutter logs.
-  - `clean-architecture-skill`: Acts as an architectural linter to enforce the Domain-Driven Feature-First rule.
-  - `provider-state-skill`: Enforces correct usage of `context.read()`, `context.watch()`, and `Consumer` to prevent UI jank.
-  - `math-precision-skill`: Enforces strict number formatting and precision (e.g., handling floating point errors).
-- **Evolution Mandate**: Proactively propose updates to this AGENTS.md file as new features or libraries are added.
+To maintain maximum context efficiency and accuracy, we have migrated from this single monolithic file into a **Modular AI Architecture** located in the `.ai/` directory (inspired by tools like `aitmpl.com`).
 
-## 2. Project Context & Stack
-- **Project Name**: Numix (Professional Math Suite)
+Whenever you are tasked with a feature, you **MUST** explore and read the relevant `.ai/` files to understand your boundaries, skills, and exact rules.
+
+## 📂 The `.ai/` Structure
+
+### 🤖 Agents (`.ai/agents/`)
+Specialized system prompts for distinct roles. Read these if you are doing a specific type of task:
+- `ui-ux-agent.md`: Rules for Flutter widget tree, Material 3, animations, and responsive design.
+- `qa-integration-agent.md`: Rules for self-healing testing loops and required math coverage.
+- `devops-agent.md`: Rules for Native Android/iOS builds, Gradle, and CI/CD.
+- `tech-writer-agent.md`: Rules for documentation, READMEs, and code comments.
+
+### 🎨 Skills (`.ai/skills/`)
+Strict domain rulesets and coding standards. Read these before writing logic:
+- `clean-architecture-skill.md`: Domain-Driven Feature-First constraints.
+- `provider-state-skill.md`: How to use `ChangeNotifier`, `Consumer`, and memory persistence.
+- `math-precision-skill.md`: Floating-point handling, `double.tryParse`, and advanced formulas.
+- `git-ops-skill.md`: Conventional commits and atomic versioning.
+
+### ⚡ Commands (`.ai/commands/`)
+Custom slash commands for rapid workflows:
+- `verify-math.md`: Action list to run tests and analyze the codebase.
+
+---
+
+### Core Project Stack
 - **Framework**: Flutter (Dart ^3.6.0)
-- **State Management**: `provider` (Standardized for this project)
-- **Math Engine**: `math_expressions` (Avoid `dart:math` for direct String evaluation to prevent crashes).
-- **Architecture**: Domain-Driven Feature-First (e.g., `lib/features/calculator`, `lib/core/`).
+- **State Management**: `provider` + `shared_preferences`
+- **Architecture**: Domain-Driven Feature-First (`lib/features/`, `lib/core/`)
 
-## 3. Core Commands (Build, Lint, Test)
-
-### Building & Running
-- **Dependencies**: `flutter pub get` (Auto-run `flutter pub add <package>` if missing).
-- **Run App**: `flutter run`
-- **Clean**: `flutter clean && flutter pub get`
-
-### Linting & Formatting
-- **Analyze Code**: `flutter analyze` *(Must pass before considering a task complete)*
-- **Format Code**: `dart format lib test`
-
-### Testing & Self-Healing
-- **Run All Tests**: `flutter test`
-- *Agent Rule*: Use testing as a self-verification loop. For a math suite, 100% unit test coverage on the calculation engine is mandatory. 
-
-## 4. Code Style & Guidelines
-
-### 4.1 Naming Conventions
-- **Classes/Enums**: `UpperCamelCase` (e.g., `CalculatorProvider`).
-- **Files/Directories**: `snake_case` (e.g., `calculator_provider.dart`).
-- **Variables/Methods**: `lowerCamelCase` (e.g., `evaluateExpression()`).
-- **Private Members**: Prefix with `_`.
-
-### 4.2 State Management & Architecture Rules (CRITICAL)
-- **Isolate Logic**: NO mathematical logic or string parsing should live inside a Widget. All evaluations must happen in a UseCase, Service, or Provider.
-- **Provider Usage**: Use `ChangeNotifier` and `Consumer`. Use `context.read()` for events (like button taps) and `context.watch()` only where UI rebuilding is needed.
-- **Precision**: Be careful with standard `double` arithmetic (e.g., 0.1 + 0.2). Always format output string precisely to avoid `0.30000000000000004` errors in the UI.
-
-### 4.3 Types, Null Safety, & Errors
-- Dart is strongly typed and null-safe. Always declare return types.
-- **Strict Casting**: Avoid blindly using the bang operator `!` on objects.
-- **Math Exceptions**: Always wrap the evaluator `parse()` or `evaluate()` in `try/catch` to handle "FormatExceptions" when the user inputs invalid math syntax (e.g., `5 + * 2`). Return a clean error string like "Error" to the UI.
-
-## 5. Operational Rules
+### Operational Rules
 1. **Never execute destructive commands** (`git reset --hard`, `rm -rf`) without explicit user permission.
 2. **Construct absolute paths** for file modifications.
-3. **Minimize verbosity**: Communicate with the user concisely. Let your code and tool usage do the talking.
-4. **Log Filtering**: During `flutter run`, ignore verbose hardware/C++ errors (e.g., `gralloc4`, `Impeller`) specific to OEM implementations (like MIUI/Xiaomi) unless they result in a fatal app crash.
+3. **Evolution Mandate**: This ecosystem is a living structure. When a new library is added or a new architectural decision is made, do not hesitate to create a new `skill` or `agent` file inside `.ai/` to teach the rest of the AI tools how to use it.
