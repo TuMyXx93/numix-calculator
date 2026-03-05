@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../providers/sales_price_provider.dart';
 
 class ScreenTwo extends StatefulWidget {
   const ScreenTwo({super.key});
@@ -12,18 +14,15 @@ class _ScreenTwoState extends State<ScreenTwo> {
   final _formKey = GlobalKey<FormState>();
   final _costController = TextEditingController();
   final _profitController = TextEditingController();
-  double? _salePrice;
-  double? _profitAmount;
+  final _taxController = TextEditingController();
 
   void _calculateSalePrice() {
     if (_formKey.currentState!.validate()) {
-      final cost = double.parse(_costController.text);
-      final profitPercentage = double.parse(_profitController.text);
-      
-      setState(() {
-        _profitAmount = (cost * profitPercentage) / 100;
-        _salePrice = cost + _profitAmount!;
-      });
+      context.read<SalesPriceProvider>().calculatePrice(
+        costStr: _costController.text,
+        profitPercentStr: _profitController.text,
+        taxStr: _taxController.text,
+      );
     }
   }
 
@@ -35,6 +34,7 @@ class _ScreenTwoState extends State<ScreenTwo> {
   void dispose() {
     _costController.dispose();
     _profitController.dispose();
+    _taxController.dispose();
     super.dispose();
   }
 
@@ -42,8 +42,19 @@ class _ScreenTwoState extends State<ScreenTwo> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calcular Precio de Venta'),
+        title: const Text('Precio de Venta'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              _costController.clear();
+              _profitController.clear();
+              _taxController.clear();
+              context.read<SalesPriceProvider>().clear();
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -52,6 +63,36 @@ class _ScreenTwoState extends State<ScreenTwo> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              // Tipo de Margen Toggle
+              Consumer<SalesPriceProvider>(
+                builder: (context, provider, child) {
+                  return Card(
+                    elevation: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('Sobre Costo'),
+                          Switch(
+                            value: provider.marginType == MarginType.margin,
+                            onChanged: (value) {
+                              provider.setMarginType(
+                                value ? MarginType.margin : MarginType.markup,
+                              );
+                              if (_costController.text.isNotEmpty && _profitController.text.isNotEmpty) {
+                                _calculateSalePrice();
+                              }
+                            },
+                          ),
+                          const Text('Sobre Venta (Pro)'),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+              ),
+              const SizedBox(height: 16),
               Card(
                 elevation: 4,
                 child: Padding(
@@ -61,10 +102,9 @@ class _ScreenTwoState extends State<ScreenTwo> {
                       TextFormField(
                         controller: _costController,
                         decoration: const InputDecoration(
-                          labelText: 'Costo del Producto',
+                          labelText: 'Costo Base del Producto',
                           prefixIcon: Icon(Icons.inventory),
                           border: OutlineInputBorder(),
-                          hintText: 'Ingrese el costo del producto',
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
@@ -74,8 +114,8 @@ class _ScreenTwoState extends State<ScreenTwo> {
                           if (value == null || value.isEmpty) {
                             return 'Por favor ingrese el costo';
                           }
-                          if (double.tryParse(value) == null || double.parse(value) <= 0) {
-                            return 'Por favor ingrese un costo válido';
+                          if (double.tryParse(value) == null) {
+                            return 'Costo inválido';
                           }
                           return null;
                         },
@@ -84,10 +124,9 @@ class _ScreenTwoState extends State<ScreenTwo> {
                       TextFormField(
                         controller: _profitController,
                         decoration: const InputDecoration(
-                          labelText: 'Porcentaje de Ganancia',
+                          labelText: 'Porcentaje de Ganancia (%)',
                           prefixIcon: Icon(Icons.trending_up),
                           border: OutlineInputBorder(),
-                          hintText: 'Ingrese el porcentaje de ganancia',
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
@@ -97,12 +136,24 @@ class _ScreenTwoState extends State<ScreenTwo> {
                           if (value == null || value.isEmpty) {
                             return 'Por favor ingrese el porcentaje';
                           }
-                          final profit = double.tryParse(value);
-                          if (profit == null || profit < 0) {
-                            return 'Por favor ingrese un porcentaje válido';
+                          if (double.tryParse(value) == null) {
+                            return 'Porcentaje inválido';
                           }
                           return null;
                         },
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _taxController,
+                        decoration: const InputDecoration(
+                          labelText: 'Impuestos / IVA (%) (Opcional)',
+                          prefixIcon: Icon(Icons.account_balance),
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                        ],
                       ),
                     ],
                   ),
@@ -112,37 +163,85 @@ class _ScreenTwoState extends State<ScreenTwo> {
               ElevatedButton.icon(
                 onPressed: _calculateSalePrice,
                 icon: const Icon(Icons.calculate),
-                label: const Text('Calcular Precio de Venta'),
+                label: const Text('Calcular'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(16),
                 ),
               ),
               const SizedBox(height: 24),
-              if (_salePrice != null) ...[
-                Card(
-                  elevation: 4,
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Precio de Venta: ${_formatCurrency(_salePrice!)}',
-                          style: Theme.of(context).textTheme.titleLarge,
+              Consumer<SalesPriceProvider>(
+                builder: (context, provider, child) {
+                  if (provider.errorMessage != null) {
+                    return Card(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          provider.errorMessage!,
+                          style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          textAlign: TextAlign.center,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Ganancia: ${_formatCurrency(_profitAmount!)}',
-                          style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    );
+                  }
+                  
+                  if (provider.finalPrice != null) {
+                    return Card(
+                      elevation: 4,
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Resumen Financiero',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const Divider(),
+                            _buildResultRow('Precio sin impuestos:', provider.baseSalePrice!),
+                            _buildResultRow('Ganancia Neta:', provider.profitAmount!),
+                            if (provider.taxAmount! > 0)
+                              _buildResultRow('Impuestos:', provider.taxAmount!),
+                            const Divider(),
+                            Text(
+                              'Precio Final (Venta): ${_formatCurrency(provider.finalPrice!)}',
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildResultRow(String label, double value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 16)),
+          Text(
+            _formatCurrency(value),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }
