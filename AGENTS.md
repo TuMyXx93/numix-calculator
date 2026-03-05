@@ -13,6 +13,7 @@ Specialized system prompts for distinct roles. Read these if you are doing a spe
 - `ui-ux-agent.md`: Rules for Flutter widget tree, Material 3, animations, and responsive design.
 - `qa-integration-agent.md`: Rules for self-healing testing loops and required math coverage.
 - `devops-agent.md`: Rules for Native Android/iOS builds, Gradle, and CI/CD.
+- `play-store-architect-agent.md`: Rules for Google Play policies, app signing, `.aab` bundling, and ProGuard.
 - `tech-writer-agent.md`: Rules for documentation, READMEs, and code comments.
 
 ### 🎨 Skills (`.ai/skills/`)
@@ -21,6 +22,7 @@ Strict domain rulesets and coding standards. Read these before writing logic:
 - `provider-state-skill.md`: How to use `ChangeNotifier`, `Consumer`, and memory persistence.
 - `math-precision-skill.md`: Floating-point handling, `double.tryParse`, and advanced formulas.
 - `git-ops-skill.md`: Conventional commits and atomic versioning.
+- `devsecops-workflow-skill.md`: Git branch strategy (`dev` to `main`), secret blocking, and CI/CD pre-validation.
 
 ### ⚡ Commands (`.ai/commands/`)
 Custom slash commands for rapid workflows:

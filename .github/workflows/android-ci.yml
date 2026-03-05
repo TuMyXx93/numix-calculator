@@ -1,0 +1,66 @@
+name: Numix CI/CD (Android)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  quality_and_tests:
+    name: Code Quality & Testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x' # Adjust to match your SDK constraint ^3.6.0
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Run Linter (Security & Code Quality)
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Run Unit Tests (Math Engine Coverage)
+        run: flutter test --coverage
+
+  android_build_validation:
+    name: Android Dry-Run Build
+    needs: quality_and_tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Android APK (Debug/Validation)
+        # We build debug to validate the code compiles without needing release keystores
+        run: flutter build apk --debug
