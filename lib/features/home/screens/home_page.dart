@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '1_discount_calculator_screen/discount_calculator_screen.dart';
-import '2_sales_price_calculator_screen/sales_price_calculator_screen.dart';
-import '3_product_inventory_screen/product_inventory_screen.dart';
-import '4_sales_history_screen/sales_history_screen.dart';
-import '../main.dart';
+import '../../discount_calculator/screens/discount_calculator_screen.dart';
+import '../../sales_price_calculator/screens/sales_price_calculator_screen.dart';
+import '../../product_inventory/screens/product_inventory_screen.dart';
+import '../../sales_history/screens/sales_history_screen.dart';
+import '../../../main.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});

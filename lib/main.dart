@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/welcome_screen.dart';
+import 'features/welcome/screens/welcome_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -9,14 +9,14 @@ class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<MyApp> createState() => MyAppState();
 
   // Add static method to access theme state
-  static _MyAppState? of(BuildContext context) => 
-      context.findAncestorStateOfType<_MyAppState>();
+  static MyAppState? of(BuildContext context) => 
+      context.findAncestorStateOfType<MyAppState>();
 }
 
-class _MyAppState extends State<MyApp> {
+class MyAppState extends State<MyApp> {
   bool _isDarkMode = false;
 
   void toggleTheme() {

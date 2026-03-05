@@ -1,68 +1,42 @@
-# Aplicación de Gestión Comercial
+# Numix - Professional Math Suite
 
 ## Descripción
-Esta aplicación móvil desarrollada en Flutter proporciona un conjunto de herramientas esenciales para la gestión comercial, incluyendo calculadoras de precios y sistema de inventario.
+Numix (anteriormente Aplicación de Gestión Comercial) es una suite matemática profesional y aplicación móvil desarrollada en Flutter. Proporciona un conjunto de herramientas esenciales para la gestión comercial, incluyendo calculadoras de precios, gestión de descuentos y sistema de inventario, operando bajo reglas estrictas de precisión matemática y una arquitectura escalable.
 
 ## Estado del Proyecto
-- **Versión**: 1.0.0
-- **Estado de desarrollo**: En desarrollo
-- **Porcentaje de completitud**: ~70%
+- **Versión**: 1.0.0+1
+- **Arquitectura**: Domain-Driven Feature-First (DDD)
+- **Gestión de Estado**: `provider`
+- **Motor Matemático**: `math_expressions`
 
-## Características Principales
+## 🏗️ Arquitectura y Estructura (Feature-First)
 
-### 1. Calculadora de Descuentos
-- Herramienta para calcular descuentos en productos
-- Interfaz intuitiva y fácil de usar
-- Cálculos en tiempo real
+Este proyecto se adhiere estrictamente a un diseño Domain-Driven adaptado para Flutter. El directorio `lib/` está estructurado así:
 
-### 2. Calculadora de Precios de Venta
-- Ayuda a determinar precios de venta óptimos
-- Consideración de márgenes de ganancia
-- Análisis de costos
+*   **`core/`**: Contiene utilidades de toda la aplicación, temas, constantes y formateadores (especialmente para precisión matemática y evitar errores de punto flotante).
+*   **`features/`**: Contiene los dominios reales de la aplicación. Cada feature está completamente aislado y contiene su propia UI (`screens`/`widgets`), State Management (`providers`) y Lógica (`services`/`use_cases`).
+    *   `discount_calculator/`
+    *   `sales_price_calculator/`
+    *   `product_inventory/`
+    *   `sales_history/`
+    *   `home/`
+    *   `welcome/`
 
-### 3. Inventario de Productos
-- Gestión completa de inventario
-- Seguimiento de stock
-- Registro de productos
+## 🧠 Lógica y Reglas de Estado
 
-### 4. Historial de Ventas
-- Registro detallado de transacciones
-- Seguimiento histórico de ventas
-- Análisis de tendencias
+*   **Widgets "Tontos"**: La interfaz gráfica solo muestra datos y dispara eventos. Toda la lógica matemática, parseo de strings y reglas de negocio residen dentro de los Providers o Servicios.
+*   **Seguridad Matemática**: Los cálculos están impulsados por `math_expressions`. Evitamos explícitamente la evaluación directa de strings con `dart:math` para prevenir crashes. Todos los parseos están envueltos en `try/catch` para manejar `FormatExceptions`.
+*   **Rendimiento**: Se exige el uso correcto de `context.read()` para eventos y `context.watch()` o `Consumer` exclusivamente para las partes de la UI que necesitan reconstruirse, garantizando 60/120 fps fluidos.
 
-## Características Técnicas
-- Desarrollado con Flutter SDK ^3.6.0
-- Soporte para temas claro/oscuro
-- Interfaz adaptativa y responsive
-- Animaciones fluidas para mejor experiencia de usuario
+## 🤖 Ecosistema de IA
 
-## Requisitos del Sistema
-- Flutter SDK: ^3.6.0
-- Dart SDK: Compatible con la versión más reciente
-- Soporte para Android e iOS
+Este repositorio se mantiene en colaboración con un ecosistema de Agentes de IA. Consulta `AGENTS.md` para ver las directrices operativas estrictas, los subagentes (`ui-ux-agent`, `qa-integration-agent`, `tech-writer-agent`) y las "skills" activas (`git-ops-skill`, `math-precision-skill`) que imponen la calidad del código, la integridad arquitectónica y los flujos de trabajo de control de versiones.
 
-## Instalación
-1. Clonar el repositorio
-2. Ejecutar `flutter pub get` para instalar dependencias
-3. Ejecutar `flutter run` para iniciar la aplicación
-
-## Próximas Mejoras
-- [ ] Implementación de base de datos local
-- [ ] Exportación de reportes
-- [ ] Sincronización en la nube
-- [ ] Generación de facturas
-- [ ] Múltiples perfiles de usuario
-
-## Contribución
-Las contribuciones son bienvenidas. Por favor, asegúrate de:
-1. Hacer fork del proyecto
-2. Crear una rama para tu feature
-3. Commit tus cambios
-4. Push a la rama
-5. Crear un Pull Request
-
-## Licencia
-Este proyecto está bajo desarrollo privado.
+## Instalación y Desarrollo
+1. Asegúrate de tener Flutter instalado (`sdk: ^3.6.0`).
+2. Clona el repositorio y ejecuta `flutter pub get` para instalar dependencias.
+3. Ejecuta `flutter run` para iniciar la aplicación.
+4. Ejecuta `flutter test` para ejecutar el ciclo de pruebas (El motor matemático exige 100% de cobertura de pruebas unitarias).
 
 ---
-Desarrollado con ❤️ utilizando Flutter
+Desarrollado con ❤️ utilizando Flutter bajo el ecosistema de Agentes Numix.
