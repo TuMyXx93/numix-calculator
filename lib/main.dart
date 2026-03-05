@@ -12,7 +12,8 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => DiscountCalculatorProvider(prefs)),
+        ChangeNotifierProvider(
+            create: (_) => DiscountCalculatorProvider(prefs)),
         ChangeNotifierProvider(create: (_) => SalesPriceProvider(prefs)),
       ],
       child: const MyApp(),
@@ -27,7 +28,7 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => MyAppState();
 
   // Add static method to access theme state
-  static MyAppState? of(BuildContext context) => 
+  static MyAppState? of(BuildContext context) =>
       context.findAncestorStateOfType<MyAppState>();
 }
 
@@ -43,11 +44,14 @@ class MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'Numix',
       debugShowCheckedModeBanner: false,
-      theme: _isDarkMode ? ThemeData.dark(useMaterial3: true) : ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: _isDarkMode
+          ? ThemeData.dark(useMaterial3: true)
+          : ThemeData(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+              useMaterial3: true,
+            ),
       home: const WelcomeScreen(),
     );
   }
