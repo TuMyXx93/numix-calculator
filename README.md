@@ -1,7 +1,7 @@
 # Numix - Professional Math Suite
 
 ## Descripción
-Numix (anteriormente Aplicación de Gestión Comercial) es una suite matemática profesional y aplicación móvil desarrollada en Flutter. Proporciona un conjunto de herramientas esenciales para la gestión comercial, incluyendo calculadoras de precios, gestión de descuentos y sistema de inventario, operando bajo reglas estrictas de precisión matemática y una arquitectura escalable.
+Numix es una suite matemática profesional y aplicación móvil desarrollada en Flutter. Proporciona un conjunto de herramientas esenciales para la gestión comercial, incluyendo calculadoras de precios, gestión de descuentos y sistema de inventario, operando bajo reglas estrictas de precisión matemática y una arquitectura escalable.
 
 ## Estado del Proyecto
 - **Versión**: 1.0.0+1
