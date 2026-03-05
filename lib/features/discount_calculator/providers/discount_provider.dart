@@ -1,18 +1,34 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum DiscountType {
-  percentage, // Descuento en porcentaje (%)
-  fixedAmount, // Descuento en monto fijo ($)
+  percentage,
+  fixedAmount,
 }
 
 class DiscountCalculatorProvider extends ChangeNotifier {
-  double? _subtotal; // Precio después de descuentos, antes de impuestos
-  double? _finalPrice; // Precio final con impuestos
-  double? _savedAmount; // Total ahorrado
-  double? _taxAmount; // Monto de impuestos a pagar
+  final SharedPreferences _prefs;
+
+  double? _subtotal;
+  double? _finalPrice;
+  double? _savedAmount;
+  double? _taxAmount;
   String? _errorMessage;
 
   DiscountType _discountType = DiscountType.percentage;
+
+  // Persisted Inputs
+  String _originalPriceInput = '';
+  String _primaryDiscountInput = '';
+  String _additionalDiscountInput = '';
+  String _taxInput = '';
+  
+  // Parsed Original Price for UI
+  double? _originalPrice;
+
+  DiscountCalculatorProvider(this._prefs) {
+    _loadFromPrefs();
+  }
 
   // Getters
   double? get subtotal => _subtotal;
@@ -21,9 +37,29 @@ class DiscountCalculatorProvider extends ChangeNotifier {
   double? get taxAmount => _taxAmount;
   String? get errorMessage => _errorMessage;
   DiscountType get discountType => _discountType;
+  
+  String get originalPriceInput => _originalPriceInput;
+  String get primaryDiscountInput => _primaryDiscountInput;
+  String get additionalDiscountInput => _additionalDiscountInput;
+  String get taxInput => _taxInput;
+  double? get originalPrice => _originalPrice;
+
+  void _loadFromPrefs() {
+    _originalPriceInput = _prefs.getString('disc_orig') ?? '';
+    _primaryDiscountInput = _prefs.getString('disc_pri') ?? '';
+    _additionalDiscountInput = _prefs.getString('disc_add') ?? '';
+    _taxInput = _prefs.getString('disc_tax') ?? '';
+    final typeIndex = _prefs.getInt('disc_type') ?? 0;
+    _discountType = typeIndex == 0 ? DiscountType.percentage : DiscountType.fixedAmount;
+
+    if (_originalPriceInput.isNotEmpty && _primaryDiscountInput.isNotEmpty) {
+      _calculateInternal();
+    }
+  }
 
   void setDiscountType(DiscountType type) {
     _discountType = type;
+    _prefs.setInt('disc_type', type == DiscountType.percentage ? 0 : 1);
     notifyListeners();
   }
 
@@ -33,28 +69,43 @@ class DiscountCalculatorProvider extends ChangeNotifier {
     String additionalDiscountStr = '',
     String taxStr = '',
   }) {
+    _originalPriceInput = originalPriceStr;
+    _primaryDiscountInput = primaryDiscountStr;
+    _additionalDiscountInput = additionalDiscountStr;
+    _taxInput = taxStr;
+
+    _prefs.setString('disc_orig', originalPriceStr);
+    _prefs.setString('disc_pri', primaryDiscountStr);
+    _prefs.setString('disc_add', additionalDiscountStr);
+    _prefs.setString('disc_tax', taxStr);
+
+    _calculateInternal();
+  }
+
+  void _calculateInternal() {
     _errorMessage = null;
 
-    final originalPrice = double.tryParse(originalPriceStr);
-    final primaryDiscount = double.tryParse(primaryDiscountStr);
-    final additionalDiscount = additionalDiscountStr.isEmpty ? 0.0 : double.tryParse(additionalDiscountStr);
-    final taxPercent = taxStr.isEmpty ? 0.0 : double.tryParse(taxStr);
+    final origPrice = double.tryParse(_originalPriceInput);
+    final primaryDiscount = double.tryParse(_primaryDiscountInput);
+    final additionalDiscount = _additionalDiscountInput.isEmpty ? 0.0 : double.tryParse(_additionalDiscountInput);
+    final taxPercent = _taxInput.isEmpty ? 0.0 : double.tryParse(_taxInput);
 
-    if (originalPrice == null || primaryDiscount == null || additionalDiscount == null || taxPercent == null) {
+    if (origPrice == null || primaryDiscount == null || additionalDiscount == null || taxPercent == null) {
       _errorMessage = "Valores numéricos inválidos";
       _clearResults();
       notifyListeners();
       return;
     }
 
-    if (originalPrice < 0 || primaryDiscount < 0 || additionalDiscount < 0 || taxPercent < 0) {
+    if (origPrice < 0 || primaryDiscount < 0 || additionalDiscount < 0 || taxPercent < 0) {
       _errorMessage = "Los valores no pueden ser negativos";
       _clearResults();
       notifyListeners();
       return;
     }
 
-    double currentPrice = originalPrice;
+    _originalPrice = origPrice;
+    double currentPrice = origPrice;
     double totalSaved = 0.0;
 
     if (_discountType == DiscountType.percentage) {
@@ -65,7 +116,6 @@ class DiscountCalculatorProvider extends ChangeNotifier {
         return;
       }
 
-      // Descuento en cascada (Sucesivos)
       double saved1 = currentPrice * (primaryDiscount / 100);
       currentPrice -= saved1;
       totalSaved += saved1;
@@ -76,22 +126,20 @@ class DiscountCalculatorProvider extends ChangeNotifier {
         totalSaved += saved2;
       }
     } else {
-      // Monto fijo
       double totalFixedDiscount = primaryDiscount + additionalDiscount;
-      if (totalFixedDiscount > originalPrice) {
+      if (totalFixedDiscount > origPrice) {
         _errorMessage = "El descuento no puede ser mayor al precio original";
         _clearResults();
         notifyListeners();
         return;
       }
       totalSaved = totalFixedDiscount;
-      currentPrice = originalPrice - totalFixedDiscount;
+      currentPrice = origPrice - totalFixedDiscount;
     }
 
     _savedAmount = totalSaved;
     _subtotal = currentPrice;
 
-    // Calcular impuestos
     _taxAmount = _subtotal! * (taxPercent / 100);
     _finalPrice = _subtotal! + _taxAmount!;
 
@@ -99,6 +147,7 @@ class DiscountCalculatorProvider extends ChangeNotifier {
   }
 
   void _clearResults() {
+    _originalPrice = null;
     _subtotal = null;
     _finalPrice = null;
     _savedAmount = null;
@@ -106,6 +155,16 @@ class DiscountCalculatorProvider extends ChangeNotifier {
   }
 
   void clear() {
+    _originalPriceInput = '';
+    _primaryDiscountInput = '';
+    _additionalDiscountInput = '';
+    _taxInput = '';
+    
+    _prefs.remove('disc_orig');
+    _prefs.remove('disc_pri');
+    _prefs.remove('disc_add');
+    _prefs.remove('disc_tax');
+    
     _clearResults();
     _errorMessage = null;
     notifyListeners();

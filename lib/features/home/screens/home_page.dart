@@ -134,11 +134,11 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
           scale: _scaleAnimation.value,
           child: Container(
             width: buttonWidth,
-            height: 80,
+            constraints: const BoxConstraints(minHeight: 80),
             margin: const EdgeInsets.symmetric(vertical: 8),
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
@@ -146,21 +146,22 @@ class _MyHomePageState extends State<MyHomePage> with SingleTickerProviderStateM
               ),
               onPressed: onPressed,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Icon(icon, size: 30),
+                  const SizedBox(width: 16),
                   Expanded(
-                    child: Center(
-                      child: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
                       ),
+                      textAlign: TextAlign.left,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 8),
                   const Icon(Icons.arrow_forward_ios),
                 ],
               ),

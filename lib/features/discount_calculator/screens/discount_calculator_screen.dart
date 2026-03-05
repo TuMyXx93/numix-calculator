@@ -17,6 +17,21 @@ class _ScreenOneState extends State<ScreenOne> {
   final _additionalDiscountController = TextEditingController();
   final _taxController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    // Restaurar los valores guardados en el Provider al volver a entrar a la pantalla
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<DiscountCalculatorProvider>();
+      if (provider.originalPriceInput.isNotEmpty) {
+        _originalPriceController.text = provider.originalPriceInput;
+        _primaryDiscountController.text = provider.primaryDiscountInput;
+        _additionalDiscountController.text = provider.additionalDiscountInput;
+        _taxController.text = provider.taxInput;
+      }
+    });
+  }
+
   void _calculateDiscount() {
     if (_formKey.currentState!.validate()) {
       context.read<DiscountCalculatorProvider>().calculateDiscount(
@@ -234,7 +249,7 @@ class _ScreenOneState extends State<ScreenOne> {
                               textAlign: TextAlign.center,
                             ),
                             const Divider(),
-                            _buildResultRow('Precio Original:', double.parse(_originalPriceController.text)),
+                            _buildResultRow('Precio Original:', provider.originalPrice ?? 0.0),
                             _buildResultRow('Total Ahorrado:', provider.savedAmount!, color: Colors.green),
                             if (provider.taxAmount! > 0) ...[
                               _buildResultRow('Subtotal:', provider.subtotal!),

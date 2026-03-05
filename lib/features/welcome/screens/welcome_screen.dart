@@ -29,7 +29,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MyHomePage(title: 'Bienvenido a la Calculadora')),
+          MaterialPageRoute(builder: (context) => const MyHomePage(title: 'Calculadora Numix')),
         );
       }
     });
@@ -53,7 +53,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               Icon(Icons.calculate, size: 100, color: Colors.blue),
               const SizedBox(height: 20),
               const Text(
-                '¡Bienvenido!', 
+                '¡Numix!', 
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,

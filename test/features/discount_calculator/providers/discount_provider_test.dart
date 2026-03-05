@@ -1,12 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:numix/features/discount_calculator/providers/discount_provider.dart';
 
 void main() {
   group('DiscountCalculatorProvider', () {
     late DiscountCalculatorProvider provider;
+    late SharedPreferences prefs;
 
-    setUp(() {
-      provider = DiscountCalculatorProvider();
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+      provider = DiscountCalculatorProvider(prefs);
     });
 
     test('Initial values are null', () {
@@ -32,7 +36,6 @@ void main() {
     });
 
     test('Calculates sequential percentage discount correctly', () {
-      // 100 - 20% = 80. Then 80 - 10% = 72. Total saved = 28.
       provider.calculateDiscount(
         originalPriceStr: '100', 
         primaryDiscountStr: '20',
@@ -66,7 +69,6 @@ void main() {
         taxStr: '15',
       );
 
-      // Price = 100, -20% = 80. Tax = 15% of 80 = 12. Final = 92.
       expect(provider.errorMessage, isNull);
       expect(provider.savedAmount, 20.0);
       expect(provider.subtotal, 80.0);
@@ -112,6 +114,20 @@ void main() {
       expect(provider.finalPrice, isNull);
       expect(provider.savedAmount, isNull);
       expect(provider.errorMessage, isNull);
+    });
+    
+    test('Persists and loads data from SharedPreferences', () async {
+      provider.calculateDiscount(
+        originalPriceStr: '200', 
+        primaryDiscountStr: '50'
+      );
+      
+      // Simulate app restart / new provider instance
+      final newProvider = DiscountCalculatorProvider(prefs);
+      
+      expect(newProvider.originalPriceInput, '200');
+      expect(newProvider.primaryDiscountInput, '50');
+      expect(newProvider.finalPrice, 100.0);
     });
   });
 }

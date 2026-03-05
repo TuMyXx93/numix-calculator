@@ -1,12 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:numix/features/sales_price_calculator/providers/sales_price_provider.dart';
 
 void main() {
   group('SalesPriceProvider', () {
     late SalesPriceProvider provider;
+    late SharedPreferences prefs;
 
-    setUp(() {
-      provider = SalesPriceProvider();
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+      provider = SalesPriceProvider(prefs);
     });
 
     test('Initial values are correct', () {
@@ -75,6 +79,19 @@ void main() {
       provider.clear();
       expect(provider.finalPrice, isNull);
       expect(provider.errorMessage, isNull);
+    });
+    
+    test('Persists and loads data from SharedPreferences', () async {
+      provider.calculatePrice(
+        costStr: '100', 
+        profitPercentStr: '20'
+      );
+      
+      final newProvider = SalesPriceProvider(prefs);
+      
+      expect(newProvider.costInput, '100');
+      expect(newProvider.profitPercentInput, '20');
+      expect(newProvider.finalPrice, 120.0);
     });
   });
 }

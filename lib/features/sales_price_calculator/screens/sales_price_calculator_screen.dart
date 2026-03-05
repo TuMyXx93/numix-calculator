@@ -16,6 +16,19 @@ class _ScreenTwoState extends State<ScreenTwo> {
   final _profitController = TextEditingController();
   final _taxController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = context.read<SalesPriceProvider>();
+      if (provider.costInput.isNotEmpty) {
+        _costController.text = provider.costInput;
+        _profitController.text = provider.profitPercentInput;
+        _taxController.text = provider.taxInput;
+      }
+    });
+  }
+
   void _calculateSalePrice() {
     if (_formKey.currentState!.validate()) {
       context.read<SalesPriceProvider>().calculatePrice(
